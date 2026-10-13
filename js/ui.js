@@ -152,7 +152,21 @@
     for (const [name, addr] of Object.entries(asm.symbols || {})) if (!(addr in labelAt)) labelAt[addr] = name;
     const info = new Array(VN.MEM_SIZE).fill(null).map(() => ({ kind: 'unused', label: '' }));
     for (const l of asm.listing) info[l.addr] = { kind: l.kind || 'instruction', label: labelAt[l.addr] || '' };
+    // A data row without a label of its own continues the list above it: ARR, ARR+1, ARR+2, ...
+    for (let i = 1; i < VN.MEM_SIZE; i++) {
+      if (info[i].kind !== 'data' || info[i].label) continue;
+      let k = i - 1;
+      while (k >= 0 && info[k].kind === 'data' && !labelAt[k]) k--;
+      if (k >= 0 && info[k].kind === 'data' && labelAt[k]) info[i].label = `${labelAt[k]}+${i - k}`;
+    }
     return info;
+  }
+
+  /** "I" for an instruction row, "D" for a data row, "" for a row the program does not use. */
+  function rowKindLetter(i, v, isPc) {
+    const kind = state.rowInfo[i].kind;
+    if (isPc || kind === 'instruction') return 'I';
+    return kind === 'data' || v !== 0 ? 'D' : '';
   }
 
   /** The text of the "Instruction / data" column for a row. */
@@ -387,7 +401,7 @@
       tr.id = `mt-${i}`;
       tr.innerHTML = `<td class="rownum">${i}</td><td class="addr">${VN.toBin(i, VN.ADDR_BITS)}</td>
         <td><input type="text" maxlength="9" aria-label="Contents of row ${i}, 8 binary digits" spellcheck="false"></td>
-        <td class="num"></td><td class="dis"></td>`;
+        <td class="num"></td><td class="dis"></td><td class="kind"></td>`;
       const inp = tr.querySelector('input');
       inp.addEventListener('change', () => {
         const v = parseUserValue(inp.value, 'word', 'bin');
@@ -478,6 +492,11 @@
       tr.classList.toggle('pc', isPc);
       tr.classList.toggle('access', isAccess);
       tr.classList.toggle('unused', unused);
+      const letter = rowKindLetter(i, v, isPc);
+      const kindCell = tr.querySelector('.kind');
+      kindCell.textContent = letter;
+      kindCell.className = `kind${letter ? ` k-${letter}` : ''}`;
+      kindCell.title = letter === 'I' ? 'instruction' : letter === 'D' ? 'data' : 'not used';
       const inp = tr.querySelector('input');
       if (document.activeElement !== inp) {
         inp.value = VN.wordBin(v);
