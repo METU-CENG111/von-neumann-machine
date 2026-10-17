@@ -51,7 +51,7 @@ AGAIN:  LOAD    ZERO      -- LABEL:  INSTRUCTION  X   -- comment
         JUMPLT  AGAIN
         HALT
 ZERO:   .DATA   0
-N:      .DATA   -3
+N:      .DATA   3
 .END
 ```
 
