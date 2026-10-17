@@ -302,6 +302,7 @@ AGAIN:  LOAD    ZERO      -- LABEL:  INSTRUCTION  X   -- comment
         COMPARE N         -- X can be a label or a cell number 0..15
         HALT
 ZERO:   .DATA   0         -- a data cell holding 0
+N:      .DATA   3         -- a data cell holding 3
 .END                      -- last line of the program</pre>
         <h3>Keyboard</h3>
         <p><kbd>S</kbd> next step · <kbd>I</kbd> next instruction · <kbd>B</kbd> undo · <kbd>R</kbd> reset · <kbd>Space</kbd> run / pause</p>
@@ -325,8 +326,8 @@ ZERO:   .DATA   0         -- a data cell holding 0
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="js/core.js?v=4"></script>
+  <script src="js/core.js?v=5"></script>
   <script src="js/examples.js?v=4"></script>
-  <script src="js/ui.js?v=7"></script>
+  <script src="js/ui.js?v=8"></script>
 </body>
 </html>

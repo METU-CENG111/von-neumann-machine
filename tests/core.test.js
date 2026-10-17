@@ -100,7 +100,7 @@ test('ADD and SUBTRACT work on R with unsigned 8-bit numbers (results wrap aroun
   assert.equal(w.r, 144); // 400 does not fit in 8 bits: 400 - 256
 });
 
-test('COMPARE sets GT/EQ/LT by comparing CON(X) with R (signed)', () => {
+test('COMPARE sets GT/EQ/LT by comparing CON(X) with R (unsigned)', () => {
   const cases = [
     [5, 3, [1, 0, 0]],
     [3, 3, [0, 1, 0]],
@@ -129,6 +129,21 @@ test('conditional jumps follow the condition codes', () => {
   assert.equal(run('JUMPLT', 1, 3), 15);
   assert.equal(run('JUMPNEQ', 3, 3), 3);
   assert.equal(run('JUMPNEQ', 4, 3), 15);
+});
+
+test('COMPARE and JUMP_IF include all active components in ioTable', () => {
+  const m = machineFor('COMPARE X\nJUMPGT 15\nHALT\nX: .DATA 5');
+  const compRecs = m.stepInstruction();
+  const aluComp = compRecs.find((r) => r.op === 'ALU_COMPARE');
+  const ccEntry = aluComp.ioTable.find((row) => row.component === 'CC');
+  assert.equal(ccEntry.inputs.length, 1);
+  assert.equal(ccEntry.inputs[0].label, 'from ALU');
+
+  const jumpRecs = m.stepInstruction();
+  const jumpIf = jumpRecs.find((r) => r.op === 'JUMP_IF');
+  assert.ok(jumpIf.ioTable.some((row) => row.component === 'IR'));
+  const pcEntry = jumpIf.ioTable.find((row) => row.component === 'PC');
+  assert.equal(pcEntry.inputs[0].label, 'from bus');
 });
 
 test('IN waits for input, and resumes when input is added', () => {

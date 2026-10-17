@@ -194,6 +194,7 @@
     state.traceOffset = 0;
     state.lastRec = null;
     state.practiceView = state.practice ? 'form' : null;
+    state.practiceStats = { answered: 0, perfect: 0 };
     render();
   }
 
@@ -273,6 +274,7 @@
     stopRun();
     state.practice = on;
     state.practiceView = on ? 'form' : null;
+    state.practiceStats = { answered: 0, perfect: 0 };
     if (on && !machine.atInstructionBoundary) doInstruction(); // practice starts at the beginning of an instruction
     const b = $('#btn-practice');
     b.setAttribute('aria-pressed', String(on));
@@ -662,7 +664,7 @@
     const q = (s) => `"${String(s).replace(/"/g, '""')}"`;
     const lines = [head.map(q).join(',')].concat(visibleTrace().map((t) => traceCells(t).map((c) => q(c.text)).join(',')));
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([lines.join('\r\n')], { type: 'text/csv' }));
+    a.href = URL.createObjectURL(new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
     a.download = 'trace.csv';
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);

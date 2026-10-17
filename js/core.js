@@ -525,7 +525,7 @@
         ioTable: [
           { component: 'CU', inputs: [], outputs: [port('ALU selector', 'COMPARE', 'text')] },
           { component: 'ALU', inputs: [port('content of X (from MDR)', this.mdr, 'word'), port('R', this.r, 'word')], outputs: [port('result', `content of X ${rel} R`, 'text')] },
-          { component: 'CC', inputs: [], outputs: [port('GT', this.gt, 'bit'), port('EQ', this.eq, 'bit'), port('LT', this.lt, 'bit')] },
+          { component: 'CC', inputs: [port('from ALU', `content of X ${rel} R`, 'text')], outputs: [port('GT', this.gt, 'bit'), port('EQ', this.eq, 'bit'), port('LT', this.lt, 'bit')] },
         ],
         text: `The ALU compares the value from memory (MDR = ${x}) with R (${r}). Since ${x} ${rel} ${r}, the condition codes become GT = ${this.gt}, EQ = ${this.eq}, LT = ${this.lt}. R and memory do not change.`,
       };
@@ -556,13 +556,18 @@
         active: taken ? ['CU', 'CC', 'IR', 'PC'] : ['CU', 'CC'],
         wires: taken ? ['w-cc-cu', 'w-ir-bus', 'bus-internal', 'w-pc-bus'] : ['w-cc-cu'],
         bus: taken ? { internal: a, internalKind: 'addr' } : {},
-        ioTable: [
-          { component: 'CC', inputs: [], outputs: [port(flag, flagVal, 'bit')] },
-          { component: 'CU', inputs: [port(flag, flagVal, 'bit')], outputs: [port('decision', taken ? 'jump' : 'no jump', 'text')] },
-          taken
-            ? { component: 'PC', inputs: [port('from IR', a, 'addr')], outputs: [port('new value', a, 'addr')] }
-            : { component: 'PC', inputs: [], outputs: [port('unchanged', oldPc, 'addr')] },
-        ],
+        ioTable: taken
+          ? [
+              { component: 'CC', inputs: [], outputs: [port(flag, flagVal, 'bit')] },
+              { component: 'CU', inputs: [port(flag, flagVal, 'bit')], outputs: [port('decision', 'jump', 'text')] },
+              { component: 'IR', inputs: [], outputs: [port('address field', a, 'addr')] },
+              { component: 'PC', inputs: [port('from bus', a, 'addr')], outputs: [port('new value', a, 'addr')] },
+            ]
+          : [
+              { component: 'CC', inputs: [], outputs: [port(flag, flagVal, 'bit')] },
+              { component: 'CU', inputs: [port(flag, flagVal, 'bit')], outputs: [port('decision', 'no jump', 'text')] },
+              { component: 'PC', inputs: [], outputs: [port('unchanged', oldPc, 'addr')] },
+            ],
         text: taken
           ? `The jump happens only if ${need}. The condition code ${flag} is ${flagVal}, so the jump is taken: ${IR_ADDR_TEXT}, ${A(a)}, is copied into PC.`
           : `The jump happens only if ${need}. The condition code ${flag} is ${flagVal}, so there is no jump. PC keeps ${A(oldPc)}, which already points to the next instruction.`,
